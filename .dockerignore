@@ -1,15 +1,11 @@
-
 node_modules
 .next
 .git
-.gitignore
 .env
 .env.*
 !.env.example
+data
 *.db
 *.db-journal
 *.db-shm
 *.db-wal
-coverage
-data
-npm-debug.log*
