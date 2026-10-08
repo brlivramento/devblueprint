@@ -1,0 +1,18 @@
+
+services:
+  app:
+    container_name: devblueprint
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:/app/data/devblueprint.db
+    volumes:
+      - devblueprint_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  devblueprint_data:
