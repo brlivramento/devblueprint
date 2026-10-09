@@ -12,9 +12,28 @@ services:
       DATABASE_URL: file:/app/data/devblueprint.db
       NOTION_TOKEN: ${NOTION_TOKEN}
       NOTION_PROJECTS_DATABASE_ID: ${NOTION_PROJECTS_DATABASE_ID}
+      SYNC_API_TOKEN: ${SYNC_API_TOKEN}
     volumes:
       - devblueprint_data:/app/data
     restart: unless-stopped
+
+  worker:
+    image: node:22-alpine
+    working_dir: /worker
+    restart: unless-stopped
+
+    volumes:
+      - ./scripts/sync-worker.mjs:/worker/sync-worker.mjs:ro
+
+    environment:
+      SYNC_API_URL: http://app:3000/api/sync/outbox
+      SYNC_API_TOKEN: ${SYNC_API_TOKEN:?SYNC_API_TOKEN obrigatório}
+      SYNC_INTERVAL_MS: 60000
+
+    command: ["node", "sync-worker.mjs"]
+
+    depends_on:
+      - app
 
 volumes:
   devblueprint_data:
