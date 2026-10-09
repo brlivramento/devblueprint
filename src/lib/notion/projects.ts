@@ -46,9 +46,13 @@ export async function listNotionProjects() {
   return projects.map(mapNotionProject)
 }
 
-export async function createNotionProject(input: CreateProjectInput) {
+export async function createNotionProject(
+  input: CreateProjectInput,
+  localId?: string
+) {
   const notion = getNotionClient()
   const dataSourceId = await getProjectsDataSourceId()
+
   const project = createProjectSchema.parse(input)
 
   const response = await notion.pages.create({
@@ -59,20 +63,50 @@ export async function createNotionProject(input: CreateProjectInput) {
     properties: {
       Name: {
         type: "title",
-        title: [{ text: { content: project.name } }],
+        title: [
+          {
+            text: {
+              content: project.name,
+            },
+          },
+        ],
       },
       Status: {
         type: "select",
-        select: { name: project.status },
+        select: {
+          name: project.status,
+        },
       },
       Description: {
         type: "rich_text",
-        rich_text: [{ text: { content: project.description } }],
+        rich_text: [
+          {
+            text: {
+              content: project.description,
+            },
+          },
+        ],
       },
       "Created At": {
         type: "date",
-        date: { start: new Date().toISOString() },
+        date: {
+          start: new Date().toISOString(),
+        },
       },
+      ...(localId
+        ? {
+            "Local ID": {
+              type: "rich_text" as const,
+              rich_text: [
+                {
+                  text: {
+                    content: localId,
+                  },
+                },
+              ],
+            },
+          }
+        : {}),
     },
   })
 
@@ -81,4 +115,27 @@ export async function createNotionProject(input: CreateProjectInput) {
   }
 
   return mapNotionProject(response)
+}
+
+export async function findNotionProjectByLocalId(localId: string) {
+  const notion = getNotionClient()
+  const dataSourceId = await getProjectsDataSourceId()
+
+  const response = await notion.dataSources.query({
+    data_source_id: dataSourceId,
+    filter: {
+      property: "Local ID",
+      rich_text: {
+        equals: localId,
+      },
+    },
+    page_size: 1,
+  })
+
+  const page = response.results.find(
+    (item): item is PageObjectResponse =>
+      item.object === "page" && "properties" in item
+  )
+
+  return page ? mapNotionProject(page) : null
 }
